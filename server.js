@@ -7,7 +7,16 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    'https://social-events-server-xi.vercel.app',
+    'http://localhost:3000',
+    'http://localhost:5173'
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 app.use(express.json());
 
 // MongoDB Connection
@@ -90,6 +99,20 @@ async function run() {
     app.post('/api/events', async (req, res) => {
       try {
         const event = req.body;
+        
+        // Validate required fields
+        if (!event.title || !event.description || !event.eventType || !event.location || !event.eventDate || !event.creatorEmail) {
+          return res.status(400).send({ message: 'Missing required fields' });
+        }
+        
+        // Validate field lengths
+        if (event.title.length < 5) {
+          return res.status(400).send({ message: 'Title must be at least 5 characters' });
+        }
+        if (event.description.length < 20) {
+          return res.status(400).send({ message: 'Description must be at least 20 characters' });
+        }
+        
         event.createdAt = new Date();
         const result = await eventsCollection.insertOne(event);
         res.send(result);
@@ -103,6 +126,20 @@ async function run() {
       try {
         const id = req.params.id;
         const event = req.body;
+        
+        // Validate required fields
+        if (!event.title || !event.description || !event.eventType || !event.location || !event.eventDate) {
+          return res.status(400).send({ message: 'Missing required fields' });
+        }
+        
+        // Validate field lengths
+        if (event.title.length < 5) {
+          return res.status(400).send({ message: 'Title must be at least 5 characters' });
+        }
+        if (event.description.length < 20) {
+          return res.status(400).send({ message: 'Description must be at least 20 characters' });
+        }
+        
         const filter = { _id: new ObjectId(id) };
         const updateDoc = {
           $set: {
@@ -138,6 +175,11 @@ async function run() {
     app.post('/api/join-event', async (req, res) => {
       try {
         const joinData = req.body;
+        
+        // Validate required fields
+        if (!joinData.eventId || !joinData.userEmail || !joinData.userName) {
+          return res.status(400).send({ message: 'Missing required fields' });
+        }
         
         // Check if already joined
         const existingJoin = await joinedEventsCollection.findOne({
