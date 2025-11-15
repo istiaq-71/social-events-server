@@ -19,6 +19,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
+
+app.get('/', (req, res) => {
+  res.send('Social Events Server is running');
+});
+
+
 // MongoDB Connection
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri, {
@@ -224,10 +230,7 @@ async function run() {
       }
     });
 
-    // Health check
-    app.get('/', (req, res) => {
-      res.send('Social Events Server is running');
-    });
+    
 
   } catch (error) {
     console.error("Failed to connect to MongoDB", error);
@@ -238,10 +241,6 @@ async function run() {
 
 run().catch(console.dir);
 
-// --- VERCEL DEPLOYMENT CHANGE ---
-// Purono 'app.listen' line-ti comment out kora hoyeche
-// app.listen(port, () => {
-//   console.log(`Server is running on port ${port}`);
-// });
+
 
 module.exports = app;
