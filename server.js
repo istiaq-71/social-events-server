@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 // Middleware
 app.use(cors({
   origin: [
-    'https://social-events-client.vercel.app', // <-- ঠিক করা হয়েছে
+    'https://social-events-client.vercel.app', 
     'http://localhost:3000',
     'http://localhost:5173'
   ],
@@ -31,10 +31,10 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-  
+ 
     console.log("Attempting to connect to MongoDB...");
     
-   
+    
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
@@ -42,7 +42,7 @@ async function run() {
     const eventsCollection = database.collection('events');
     const joinedEventsCollection = database.collection('joinedEvents');
 
-   
+    
     app.get('/api/events', async (req, res) => {
       try {
         const { eventType, search } = req.query;
@@ -56,7 +56,7 @@ async function run() {
           query.eventType = eventType;
         }
 
-      
+        
         if (search) {
           query.title = { $regex: search, $options: 'i' };
         }
@@ -72,7 +72,7 @@ async function run() {
       }
     });
 
-  
+ 
     app.get('/api/events/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -84,7 +84,7 @@ async function run() {
       }
     });
 
-   
+    
     app.get('/api/my-events/:email', async (req, res) => {
       try {
         const email = req.params.email;
@@ -98,16 +98,14 @@ async function run() {
       }
     });
 
- 
     app.post('/api/events', async (req, res) => {
       try {
         const event = req.body;
         
-
         if (!event.title || !event.description || !event.eventType || !event.location || !event.eventDate || !event.creatorEmail) {
           return res.status(400).send({ message: 'Missing required fields' });
         }
-       
+        
         if (event.title.length < 5) {
           return res.status(400).send({ message: 'Title must be at least 5 characters' });
         }
@@ -129,12 +127,10 @@ async function run() {
         const id = req.params.id;
         const event = req.body;
         
-        // Validate required fields
         if (!event.title || !event.description || !event.eventType || !event.location || !event.eventDate) {
           return res.status(400).send({ message: 'Missing required fields' });
         }
         
-        // Validate field lengths
         if (event.title.length < 5) {
           return res.status(400).send({ message: 'Title must be at least 5 characters' });
         }
@@ -178,12 +174,10 @@ async function run() {
       try {
         const joinData = req.body;
         
-        // Validate required fields
         if (!joinData.eventId || !joinData.userEmail || !joinData.userName) {
           return res.status(400).send({ message: 'Missing required fields' });
         }
         
-        // Check if already joined
         const existingJoin = await joinedEventsCollection.findOne({
           eventId: joinData.eventId,
           userEmail: joinData.userEmail
@@ -244,6 +238,11 @@ async function run() {
 
 run().catch(console.dir);
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+// --- VERCEL DEPLOYMENT CHANGE ---
+// Purono 'app.listen' line-ti comment out kora hoyeche
+// app.listen(port, () => {
+//   console.log(`Server is running on port ${port}`);
+// });
+
+
+module.exports = app;
