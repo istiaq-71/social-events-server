@@ -19,11 +19,12 @@ app.use(cors({
 }));
 app.use(express.json());
 
-
+// --- 💡 PORIBORTON EKHANE ---
+// Health check route-ti BAIRE thakte hobe
 app.get('/', (req, res) => {
   res.send('Social Events Server is running');
 });
-
+// --- PORIBORTON SHESH ---
 
 // MongoDB Connection
 const uri = process.env.MONGODB_URI;
@@ -39,7 +40,6 @@ async function run() {
   try {
  
     console.log("Attempting to connect to MongoDB...");
-    
     
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
@@ -240,7 +240,6 @@ async function run() {
 }
 
 run().catch(console.dir);
-
 
 
 module.exports = app;
