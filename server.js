@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 // Middleware
 app.use(cors({
   origin: [
-    'https://social-events-server-xi.vercel.app',
+    'https://social-events-client.vercel.app', // <-- ঠিক করা হয়েছে
     'http://localhost:3000',
     'http://localhost:5173'
   ],
@@ -31,14 +31,18 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    await client.connect();
-    console.log("Connected to MongoDB!");
+  
+    console.log("Attempting to connect to MongoDB...");
+    
+   
+    await client.db("admin").command({ ping: 1 });
+    console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
     const database = client.db('socialEventsDB');
     const eventsCollection = database.collection('events');
     const joinedEventsCollection = database.collection('joinedEvents');
 
-    // Get all upcoming events with filter and search
+   
     app.get('/api/events', async (req, res) => {
       try {
         const { eventType, search } = req.query;
@@ -48,12 +52,11 @@ async function run() {
           eventDate: { $gte: currentDate }
         };
 
-        // Add event type filter
         if (eventType && eventType !== 'all') {
           query.eventType = eventType;
         }
 
-        // Add search filter
+      
         if (search) {
           query.title = { $regex: search, $options: 'i' };
         }
@@ -69,7 +72,7 @@ async function run() {
       }
     });
 
-    // Get single event by ID
+  
     app.get('/api/events/:id', async (req, res) => {
       try {
         const id = req.params.id;
@@ -81,7 +84,7 @@ async function run() {
       }
     });
 
-    // Get events by user email
+   
     app.get('/api/my-events/:email', async (req, res) => {
       try {
         const email = req.params.email;
@@ -95,17 +98,16 @@ async function run() {
       }
     });
 
-    // Create new event
+ 
     app.post('/api/events', async (req, res) => {
       try {
         const event = req.body;
         
-        // Validate required fields
+
         if (!event.title || !event.description || !event.eventType || !event.location || !event.eventDate || !event.creatorEmail) {
           return res.status(400).send({ message: 'Missing required fields' });
         }
-        
-        // Validate field lengths
+       
         if (event.title.length < 5) {
           return res.status(400).send({ message: 'Title must be at least 5 characters' });
         }
@@ -194,7 +196,8 @@ async function run() {
         joinData.joinedAt = new Date();
         const result = await joinedEventsCollection.insertOne(joinData);
         res.send(result);
-      } catch (error) {
+      } catch (error)
+      {
         res.status(500).send({ message: error.message });
       }
     });
@@ -233,7 +236,9 @@ async function run() {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("Failed to connect to MongoDB", error);
+  } finally {
+
   }
 }
 
