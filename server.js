@@ -9,6 +9,7 @@ const port = process.env.PORT || 5000;
 // Middleware
 app.use(cors({
   origin: [
+    'https://social-events-client.vercel.app',
     'https://social-events-server-xi.vercel.app',
     'http://localhost:3000',
     'http://localhost:5173'
