@@ -247,11 +247,44 @@ async function run() {
       try {
         const id = req.params.id;
         const query = { _id: new ObjectId(id) };
+        
+        // First, check if event exists
+        const event = await eventsCollection.findOne(query);
+        if (!event) {
+          return res.status(404).json({ message: 'Event not found' });
+        }
+
+        // Delete all joined events related to this event
+        const deleteJoinedEventsResult = await joinedEventsCollection.deleteMany({
+          eventId: id
+        });
+        console.log(`Deleted ${deleteJoinedEventsResult.deletedCount} joined event(s) for event ${id}`);
+
+        // Now delete the event itself
         const result = await eventsCollection.deleteOne(query);
-        res.json(result);
+        
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ message: 'Event not found or already deleted' });
+        }
+
+        res.json({
+          success: true,
+          message: 'Event and related joined events deleted successfully',
+          deletedEvent: result.deletedCount,
+          deletedJoinedEvents: deleteJoinedEventsResult.deletedCount
+        });
       } catch (error) {
         console.error('Error deleting event:', error);
-        res.status(500).json({ message: error.message });
+        console.error('Error stack:', error.stack);
+        
+        // Handle invalid ObjectId
+        if (error.name === 'BSONError' || error.message.includes('ObjectId')) {
+          return res.status(400).json({ message: 'Invalid event ID' });
+        }
+        
+        res.status(500).json({ 
+          message: error.message || 'Failed to delete event. Please try again.'
+        });
       }
     });
 
