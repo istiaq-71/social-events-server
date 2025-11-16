@@ -37,6 +37,7 @@ const client = new MongoClient(uri, {
 });
 let eventsCollection;
 let joinedEventsCollection;
+let subscribersCollection;
 let routesRegistered = false;
 
 async function run() {
@@ -52,6 +53,7 @@ async function run() {
     const database = client.db('socialEventsDB');
     eventsCollection = database.collection('events');
     joinedEventsCollection = database.collection('joinedEvents');
+    subscribersCollection = database.collection('subscribers');
 
     console.log("Connected to MongoDB and collections initialized");
 
@@ -304,6 +306,66 @@ async function run() {
       } catch (error) {
         console.error('Error checking join status:', error);
         res.status(500).json({ message: error.message });
+      }
+    });
+
+    app.post('/api/subscribe', async (req, res) => {
+      try {
+        const { email } = req.body;
+
+        // Validate email
+        if (!email || !email.trim()) {
+          return res.status(400).json({ message: 'Email is required' });
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email.trim())) {
+          return res.status(400).json({ message: 'Please enter a valid email address' });
+        }
+
+        // Check if email already exists
+        const existingSubscriber = await subscribersCollection.findOne({
+          email: email.trim().toLowerCase()
+        });
+
+        if (existingSubscriber) {
+          return res.status(400).json({ message: 'This email is already subscribed' });
+        }
+
+        // Ensure collection is initialized
+        if (!subscribersCollection) {
+          console.error('Subscribers collection not initialized');
+          return res.status(500).json({ message: 'Database not initialized. Please try again.' });
+        }
+
+        // Insert subscriber
+        const subscriberData = {
+          email: email.trim().toLowerCase(),
+          subscribedAt: new Date(),
+          isActive: true
+        };
+
+        console.log('Subscribing email:', email.trim().toLowerCase());
+        const result = await subscribersCollection.insertOne(subscriberData);
+        console.log('Subscriber added successfully:', result.insertedId);
+
+        res.status(201).json({
+          success: true,
+          message: 'Successfully subscribed to newsletter!',
+          insertedId: result.insertedId
+        });
+      } catch (error) {
+        console.error('Error subscribing:', error);
+        console.error('Error stack:', error.stack);
+        
+        // Handle duplicate key error
+        if (error.code === 11000) {
+          return res.status(400).json({ message: 'This email is already subscribed' });
+        }
+        
+        res.status(500).json({ 
+          message: error.message || 'Failed to subscribe. Please try again later.'
+        });
       }
     });
 
