@@ -328,6 +328,44 @@ async function run() {
       }
     });
 
+    app.delete('/api/joined-events/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        const query = { _id: new ObjectId(id) };
+        
+        // Check if joined event exists
+        const joinedEvent = await joinedEventsCollection.findOne(query);
+        if (!joinedEvent) {
+          return res.status(404).json({ message: 'Joined event not found' });
+        }
+
+        // Delete the joined event
+        const result = await joinedEventsCollection.deleteOne(query);
+        
+        if (result.deletedCount === 0) {
+          return res.status(404).json({ message: 'Joined event not found or already deleted' });
+        }
+
+        res.json({
+          success: true,
+          message: 'Event removed from your joined events successfully',
+          deletedCount: result.deletedCount
+        });
+      } catch (error) {
+        console.error('Error removing joined event:', error);
+        console.error('Error stack:', error.stack);
+        
+        // Handle invalid ObjectId
+        if (error.name === 'BSONError' || error.message.includes('ObjectId')) {
+          return res.status(400).json({ message: 'Invalid joined event ID' });
+        }
+        
+        res.status(500).json({ 
+          message: error.message || 'Failed to remove event. Please try again.'
+        });
+      }
+    });
+
     app.get('/api/check-join/:eventId/:email', async (req, res) => {
       try {
         const { eventId, email } = req.params;
