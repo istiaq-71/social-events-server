@@ -382,6 +382,8 @@ async function run() {
 
     app.post('/api/subscribe', async (req, res) => {
       try {
+        console.log('Subscribe endpoint called');
+        console.log('Request body:', req.body);
         const { email } = req.body;
 
         // Validate email
@@ -408,6 +410,8 @@ async function run() {
           console.error('Subscribers collection not initialized');
           return res.status(500).json({ message: 'Database not initialized. Please try again.' });
         }
+
+        console.log('Subscribers collection is initialized');
 
         // Insert subscriber
         const subscriberData = {
